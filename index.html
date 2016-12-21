@@ -117,6 +117,7 @@
     		align-items: center;
     		margin: 0;
     		transition:all 1s;
+    		min-height: 180px;
 		}
 		.active {
 			flex: 2;
@@ -137,11 +138,21 @@
 			width: 150px;
 			display: block;
 			overflow: hidden;
-
+			width: 100%;
+			text-align:center;
 		}
 		.spotify-album-image {
 			width:100%;
 			height:auto;
+			padding:10px;
+			transition: all .054s;
+			transition-timing-function: ease-in-out;
+			cursor: pointer;
+			opacity: .5;
+		}
+		.spotify-album-image:hover {
+			opacity: 1;
+			padding: 0px;
 		}
 		/* Let's get this party started */
 		::-webkit-scrollbar {
@@ -224,6 +235,5 @@
 		$(window).resize(function(e){
 					
 		});
-		
 	</script>
 </body>
