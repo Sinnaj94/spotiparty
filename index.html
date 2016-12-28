@@ -26,7 +26,11 @@
 				<i class="material-icons">search</i>
 			</div>
 		</form>
-		<div id='images' class="images row">
+		<div class='spotify-data'>
+			<ul id='tracks' class="tracks">
+			</ul>
+			<div id='albums' class="albums row">
+			</div>
 		</div>
 	</div>
 	<style type="text/css">
@@ -35,6 +39,7 @@
 			margin : 0;
 			font-family: 'Nunito Sans', sans-serif;
 		}
+
 		.headline {
 			color: white;
 			padding: 10px;
@@ -97,7 +102,7 @@
 			overflow: auto;
 			flex-direction: column;
 		}
-		.images {
+		.spotify-data {
 			display: flex;
 			width: 100%;
 			overflow: auto;
@@ -124,11 +129,7 @@
 		}
 
 		.spotify-album {
-			object-fit:contain;
 			cursor: pointer;
-			width:100%;
-			height: auto;
-
 		}
 		.spotify-album-text {
 			color: white;
@@ -140,19 +141,46 @@
 			overflow: hidden;
 			width: 100%;
 			text-align:center;
+			opacity: 0;
+			transition: opacity .2s;
 		}
 		.spotify-album-image {
 			width:100%;
 			height:auto;
-			padding:10px;
+			padding:2px;
 			transition: all .054s;
 			transition-timing-function: ease-in-out;
 			cursor: pointer;
 			opacity: .5;
 		}
-		.spotify-album-image:hover {
+		.spotify-album:hover > .spotify-album-image {
 			opacity: 1;
-			padding: 0px;
+			padding: 5px;
+		}
+		.spotify-album:hover > .spotify-album-text {
+			opacity: 1;
+		}
+		.tracks {
+			color:white;
+			font-size: 16px;
+			width:100%;
+			list-style:none;
+			padding-left:0px;
+			
+		}
+		.track-item {
+			padding-top:16px;
+			padding-bottom:16px;
+			background-color: rgba(0,0,0,.75);
+			cursor: pointer;
+			padding-left: 16px;
+			transition: padding .2s ease-in-out,color .2s;
+		}
+		.track-item:hover {
+			padding-left: 32px;
+			background-color: rgba(255,255,255,.75);
+			color: black;
+			cursor: pointer;
 		}
 		/* Let's get this party started */
 		::-webkit-scrollbar {
@@ -185,55 +213,91 @@
 	<script type="text/javascript">
 		const rows = 8;
 		$('#myForm').submit(function(e){
+			//ALBUM
 			const query = encodeURIComponent(this.elements['query'].value);
-			const url = `https://api.spotify.com/v1/search?q=${query}&type=album`;
+			
+			ajaxRequest(query,'track', buildTracks);
+			ajaxRequest(query,'album', buildAlbums);
+			/*
+			const trackUrl = `https://api.spotify.com/v1/search?q=${query}&type=track`;
+			$.ajax({
+				method: 'GET',
+				dataType: 'json',
+				url: trackUrl,
+				success: function(data) {
+					console.log(data);
+				}
+			});
+			*/
+			e.preventDefault();
+		});
+
+		function ajaxRequest(query, type, callbackfunction, limit) {
+			if(!query) {
+				callbackfunction(null);
+				return false;
+			}
+			if(!limit) {
+				limit=20;
+			}
+			const url = `https://api.spotify.com/v1/search?q=${query}&type=${type}&limit=${limit}`;
 			$.ajax({
 				method: 'GET',
 				dataType: 'json',
 				url: url,
 				success: function (data) {
-					const artistItems= data.albums.items;
-					$('#images').empty();
-					var index = 0;
-					var current;
-					//Build the trs
-					for(var i = 0; i < rows; i++){
-						//$('#images').append(`<tr id="number${i}" class="table-element"></tr>`);
-					}
-					artistItems.forEach(item => {
-						const bigImage = item.images[1];
-						if(!bigImage){
-							bigImage = item.images[0];
-						}
-						const name = item.name;
-						console.log(index%rows);
-						if(bigImage){
-							$(document).ready(function() {
-								$('.images').addClass('active');
-							});
-							var test = `
-							<div class="col-xs-6 col-sm-4 col-md-3 col-lg-2">
-								<img class="spotify-album-image" src='${bigImage.url}'>
-								<div class="spotify-album-text">${name}</div>
-							</div>
-							`
-							$(`.images`).append(test);
-						}
-
-						index++;
-					});
-					if(!$('#images').has('*')[0]){
-						$('.images').removeClass('active');
-					}
+					callbackfunction(data);
+					return true;
 				},
 				error: function (message) {
-					$('.images').removeClass('active');
+					callbackfunction(null);
+					return false;
 				}
 			});
-			e.preventDefault();
-		});
-		$(window).resize(function(e){
-					
-		});
+		}
+
+		//Build the spotify albums and append them to the dom
+		function buildAlbums(data) {
+			$('#albums').empty();
+			if(data){
+				const artistItems= data.albums.items;
+				artistItems.forEach(item => {
+					const bigImage = item.images[1];
+					if(!bigImage){
+						bigImage = item.images[0];
+					}
+					//TODO: insert standard fallback image
+					const name = item.name;
+					if(bigImage){
+						$(document).ready(function() {
+							$('.spotify-data').addClass('active');
+						});
+						var test = `
+						<div class="col-xs-6 col-sm-4 col-md-3 col-lg-2 spotify-album">
+							<img class="spotify-album-image" src='${bigImage.url}'>
+							<div class="spotify-album-text">${name}</div>
+						</div>
+						`
+						$(`#albums`).append(test);
+					}
+				});
+			} else {
+				$('.spotify-data').removeClass('active');
+			}
+		}
+
+		//build the tracks and append them to the dom
+		function buildTracks(data) {
+			console.log(data);
+			$('#tracks').empty();
+			if(data) {
+				const trackItems = data.tracks.items;
+				trackItems.forEach(item=> {
+					console.log(item.name);
+					$('#tracks').append(`<li class="track-item">${item.name}</li>`)
+				});
+			}
+		}
+
 	</script>
 </body>
