@@ -12,6 +12,8 @@
 
 	<!-- Latest compiled and minified JavaScript -->
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
 	<title>Spotify Party</title>
 </head>
 <body>
@@ -50,6 +52,7 @@
 		}
 		.input-container {
 			position: relative;
+
 		}
 		.background {
 			position:absolute;
@@ -85,7 +88,6 @@
 			border: none;
 			padding-left: 60px;
 			font-family: 'Nunito Sans', sans-serif;
-
 		}
 		.search-button {
 			font-size: 30px;
@@ -209,38 +211,38 @@
 			height: 0;
 		}
 
+		.albums {
+			width:100%;
+		}
+
 	</style>
 	<script type="text/javascript">
 		const rows = 8;
 		$('#myForm').submit(function(e){
-			//ALBUM
+			//encode the searchfiled into an uri component so there are no errors.
 			const query = encodeURIComponent(this.elements['query'].value);
-			
+			//ajax requests for the tracks and the albums.
 			ajaxRequest(query,'track', buildTracks);
 			ajaxRequest(query,'album', buildAlbums);
-			/*
-			const trackUrl = `https://api.spotify.com/v1/search?q=${query}&type=track`;
-			$.ajax({
-				method: 'GET',
-				dataType: 'json',
-				url: trackUrl,
-				success: function(data) {
-					console.log(data);
-				}
-			});
-			*/
+			ajaxRequest(query,'artist', buildArtists);
+			//prevent the submit field from firing
 			e.preventDefault();
 		});
 
+		/**
+		 * Makes an ajaxrequest and runs the callbackfunction on success
+		 * @param  {string} query - The search Query
+		 * @param  {string} type - the type of the to be searched object. Spotify has album, artist and track at the moment.
+		 * @param  {function} callbackfunction - the function that should run after a request
+		 * @param  {int} limit - limitation of objects get by the server . if not given, it is set to 20.
+		 * @return {boolean} - function succesfull
+		 */
 		function ajaxRequest(query, type, callbackfunction, limit) {
 			if(!query) {
 				callbackfunction(null);
 				return false;
 			}
-			if(!limit) {
-				limit=20;
-			}
-			const url = `https://api.spotify.com/v1/search?q=${query}&type=${type}&limit=${limit}`;
+			const url = `https://api.spotify.com/v1/search?q=${query}&type=${type}&limit=${limit || 20}`;
 			$.ajax({
 				method: 'GET',
 				dataType: 'json',
@@ -256,10 +258,17 @@
 			});
 		}
 
-		//Build the spotify albums and append them to the dom
+		/**
+		 * builds the albums and appends them to the dom
+		 * @param  {object} data - the data of the albums
+		 */
 		function buildAlbums(data) {
+			//clear the albums
 			$('#albums').empty();
 			if(data){
+				$(document).ready(function() {
+					$('.spotify-data').addClass('active');
+				});
 				const artistItems= data.albums.items;
 				artistItems.forEach(item => {
 					const bigImage = item.images[1];
@@ -268,10 +277,8 @@
 					}
 					//TODO: insert standard fallback image
 					const name = item.name;
-					if(bigImage){
-						$(document).ready(function() {
-							$('.spotify-data').addClass('active');
-						});
+					if(name){
+						//FIXME: Albums heights are often different
 						var test = `
 						<div class="col-xs-6 col-sm-4 col-md-3 col-lg-2 spotify-album">
 							<img class="spotify-album-image" src='${bigImage.url}'>
@@ -286,17 +293,28 @@
 			}
 		}
 
-		//build the tracks and append them to the dom
+		/**
+		 * builds the tracks and appends them to the dom
+		 * @param  {object} data - the data of the tracks
+		 */
 		function buildTracks(data) {
-			console.log(data);
+			//clear the tracks
 			$('#tracks').empty();
 			if(data) {
 				const trackItems = data.tracks.items;
 				trackItems.forEach(item=> {
-					console.log(item.name);
 					$('#tracks').append(`<li class="track-item">${item.name}</li>`)
 				});
 			}
+		}
+
+		/**
+		 * builds the artists and appends them to the dom
+		 * @param  {object} data - the data of the artists
+		 */
+		function buildArtists(data) {
+			//TODO: implement
+			console.log(data);
 		}
 
 	</script>
